@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diyabet Risk · YZ</title>
+<style>
+  :root{--bg:#f6f3f4;--kart:#fff;--yazi:#231a1e;--soluk:#6e5f66;--ana:#b3263f;--ana2:#fbe9ec;--yesil:#1f8a5b;--sari:#c98a0b;--kirmizi:#c62f3a;--cizgi:#ebe2e5}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--yazi)}
+  header{background:linear-gradient(135deg,#d94a52,#8f1f45);color:#fff;padding:18px 16px 22px}
+  header h1{margin:0;font-size:21px}
+  header p{margin:4px 0 0;opacity:.88;font-size:13px}
+  main{padding:0 14px 40px;max-width:560px;margin:-12px auto 0}
+  .kart{background:var(--kart);border-radius:14px;padding:14px;margin-top:12px;box-shadow:0 1px 2px rgba(60,15,30,.06),0 4px 14px rgba(60,15,30,.05)}
+  .kart h2{font-size:15px;margin:0 0 10px}
+  .izgara{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .alan label{display:block;font-size:12.5px;font-weight:600;margin-bottom:4px}
+  .alan small{font-weight:400;color:var(--soluk)}
+  .alan input{width:100%;padding:11px 10px;border:1.5px solid var(--cizgi);border-radius:10px;font-size:16px;background:#fff;color:var(--yazi)}
+  .alan input:focus{outline:none;border-color:var(--ana)}
+  .alan.istege input{border-style:dashed}
+  .ornekler{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .cip{border:1px solid var(--cizgi);background:#fff;border-radius:20px;padding:6px 11px;font-size:12.5px;color:var(--yazi)}
+  .cip:active{background:var(--ana2)}
+  .btn{width:100%;padding:13px;border:0;border-radius:11px;background:var(--ana);color:#fff;font-size:15px;font-weight:600;margin-top:12px}
+  .risk{display:flex;align-items:center;gap:16px}
+  .halka{--p:0;width:108px;height:108px;border-radius:50%;background:conic-gradient(var(--renk,#c62f3a) calc(var(--p)*1%),#eee 0);display:grid;place-items:center;flex:none}
+  .halka div{width:84px;height:84px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:24px;font-weight:800}
+  .kategori{font-size:18px;font-weight:700}
+  .kucuk{font-size:12px;color:var(--soluk);line-height:1.45}
+  .katki{display:grid;grid-template-columns:110px 1fr;gap:6px 8px;align-items:center;font-size:12.5px;margin-top:6px}
+  .cubuk{position:relative;height:16px;background:#f5f0f2;border-radius:4px}
+  .cubuk span{position:absolute;top:0;height:16px;border-radius:4px}
+  .cubuk:after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;border-left:1px solid #9a8a90}
+  .kaydirici{margin-top:10px}
+  .kaydirici label{display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--ana)}
+  .uyari{background:#fff6e5;border:1px solid #f1d49b;color:#6b4e0c;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.45}
+  .gizli{display:none}
+  details{font-size:13.5px;line-height:1.5} summary{font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>🩸 Diyabet Risk Hesaplayıcı</h1>
+  <p>Makine öğrenmesi (lojistik regresyon) · Açıklanabilir · İnternetsiz</p>
+</header>
+<main>
+  <div class="kart">
+    <h2>Değerleri girin</h2>
+    <div class="kucuk" style="margin-bottom:6px">Hazır örnek hastalar (test setinden):</div>
+    <div class="ornekler" id="ornekler"></div>
+    <div class="izgara" id="form"></div>
+    <div class="kucuk" style="margin-top:8px">Kesikli çerçeveli alanlar isteğe bağlıdır; boş bırakılırsa eğitim verisinin medyanı kullanılır.</div>
+    <button class="btn" id="hesapla">Riski hesapla</button>
+  </div>
+
+  <div class="kart gizli" id="sonuc">
+    <div class="risk">
+      <div class="halka" id="halka"><div id="yuzde">–</div></div>
+      <div>
+        <div class="kategori" id="kategori"></div>
+        <div class="kucuk" id="aciklama"></div>
+      </div>
+    </div>
+    <h2 style="margin-top:16px">Riski ne etkiliyor?</h2>
+    <div class="kucuk">Sağa (kırmızı) uzanan değişkenler riski <b>artırıyor</b>, sola (yeşil) uzananlar <b>azaltıyor</b> (ortalama bir kişiye göre).</div>
+    <div class="katki" id="katki"></div>
+  </div>
+
+  <div class="kart gizli" id="neolur">
+    <h2>🔮 Ya şöyle olsaydı?</h2>
+    <div class="kucuk">Kaydırıcıları oynatın, risk anında yeniden hesaplanır.</div>
+    <div class="kaydirici"><label><span>Glukoz (OGTT 2. saat)</span><span id="kGlukozY"></span></label><input type="range" id="kGlukoz" min="60" max="200" step="1"></div>
+    <div class="kaydirici"><label><span>Vücut kitle indeksi</span><span id="kVKIY"></span></label><input type="range" id="kVKI" min="18" max="55" step="0.1"></div>
+    <div class="kaydirici"><label><span>Yaş</span><span id="kYasY"></span></label><input type="range" id="kYas" min="21" max="81" step="1"></div>
+    <div style="margin-top:12px;font-size:15px">Yeni risk: <b id="yeniRisk">–</b> <span class="kucuk" id="fark"></span></div>
+  </div>
+
+  <div class="kart">
+    <details>
+      <summary>Model hakkında</summary>
+      <p id="modelBilgi"></p>
+      <p>Risk = 1 / (1 + e<sup>−(b₀ + Σ bᵢ·zᵢ)</sup>) — burada zᵢ, her değerin eğitim verisine göre standartlaştırılmış hâlidir. Uygulamadaki her sayı, Python not defterinde (2.4) eğitilen modelden birebir aktarılmıştır.</p>
+      <p><b>Sınırlılıklar:</b> Model yalnızca 21 yaş üstü Pima kadınlarından oluşan 768 kişilik bir veriyle eğitilmiştir; erkeklere, diğer toplumlara ve gebeliğe doğrudan genellenemez.</p>
+    </details>
+  </div>
+  <div class="kart uyari">⚠️ <b>Yalnızca eğitim amaçlıdır.</b> Tanı koymaz. Diyabet tanısı için hekiminize başvurun (açlık glukozu, OGTT, HbA1c).</div>
+</main>
+
+<script src="model.js"></script>
+<script src="risk.js"></script>
+<script>
+(function () {
+  "use strict";
+  const M = window.DIYABET_MODEL, $ = (id) => document.getElementById(id);
+  const ALANLAR = [
+    { ad: "Yas", et: "Yaş", birim: "yıl", min: 21, max: 100, adim: 1 },
+    { ad: "Gebelik", et: "Gebelik sayısı", birim: "adet", min: 0, max: 20, adim: 1 },
+    { ad: "Glukoz", et: "Glukoz", birim: "OGTT 2. sa, mg/dL", min: 40, max: 300, adim: 1 },
+    { ad: "VKI", et: "VKİ", birim: "kg/m²", min: 12, max: 70, adim: 0.1 },
+    { ad: "KanBasinci", et: "Diyastolik KB", birim: "mmHg", min: 30, max: 140, adim: 1, istege: true },
+    { ad: "SoygecmisSkoru", et: "Soygeçmiş skoru", birim: "DPF, 0.08–2.4", min: 0, max: 3, adim: 0.01, istege: true },
+    { ad: "Insulin", et: "İnsülin", birim: "2. sa, µU/mL", min: 10, max: 900, adim: 1, istege: true },
+    { ad: "DeriKalinligi", et: "Triseps deri kıvrımı", birim: "mm", min: 5, max: 100, adim: 1, istege: true },
+  ];
+  const ADLAR = { Gebelik: "Gebelik", Glukoz: "Glukoz", KanBasinci: "Kan basıncı", DeriKalinligi: "Deri kıvrımı", Insulin: "İnsülin", VKI: "VKİ", SoygecmisSkoru: "Soygeçmiş", Yas: "Yaş" };
+  // Test setinden gerçek örnekler
+  const ORNEK = [  // Gerçek test seti hastaları (kayıt no: 185, 617, 698)
+    { et: "Hasta #185 (5 yılda diyabet)", d: { Yas: 41, Gebelik: 7, Glukoz: 194, VKI: 35.9, KanBasinci: 68, SoygecmisSkoru: 0.745, Insulin: null, DeriKalinligi: 28 } },
+    { et: "Hasta #617 (diyabet yok)", d: { Yas: 23, Gebelik: 2, Glukoz: 68, VKI: 20.1, KanBasinci: 62, SoygecmisSkoru: 0.257, Insulin: 15, DeriKalinligi: 13 } },
+    { et: "Hasta #698 (sınırda, diyabet yok)", d: { Yas: 28, Gebelik: 4, Glukoz: 127, VKI: 34.5, KanBasinci: 88, SoygecmisSkoru: 0.598, Insulin: 155, DeriKalinligi: 11 } },
+  ];
+
+  ALANLAR.forEach(function (a) {
+    const d = document.createElement("div"); d.className = "alan" + (a.istege ? " istege" : "");
+    d.innerHTML = '<label for="f_' + a.ad + '">' + a.et + ' <small>' + a.birim + '</small></label><input id="f_' + a.ad +
+      '" type="number" inputmode="decimal" min="' + a.min + '" max="' + a.max + '" step="' + a.adim + '" placeholder="' + (a.istege ? "bilmiyorum" : "") + '">';
+    $("form").appendChild(d);
+  });
+  ORNEK.forEach(function (o) {
+    const b = document.createElement("button"); b.className = "cip"; b.textContent = o.et;
+    b.onclick = function () { ALANLAR.forEach(function (a) { $("f_" + a.ad).value = o.d[a.ad] == null ? "" : o.d[a.ad]; }); hesapla(); };
+    $("ornekler").appendChild(b);
+  });
+
+  function oku() { const v = {}; ALANLAR.forEach(function (a) { const s = $("f_" + a.ad).value; v[a.ad] = s === "" ? null : Number(s); }); return v; }
+  function renk(r) { return r < 0.15 ? "#1f8a5b" : (r < M.esik ? "#c98a0b" : "#c62f3a"); }
+
+  let taban = null;
+  function hesapla() {
+    const v = oku(), eksikZorunlu = ALANLAR.filter(function (a) { return !a.istege && v[a.ad] === null; });
+    if (eksikZorunlu.length) { alert("Lütfen doldurun: " + eksikZorunlu.map(function (a) { return a.et; }).join(", ")); return; }
+    const r = DiyabetRisk.hesapla(v); taban = { v: v, r: r };
+    const yuzde = Math.round(r.risk * 100);
+    $("halka").style.setProperty("--p", yuzde); $("halka").style.setProperty("--renk", renk(r.risk)); $("yuzde").textContent = "%" + yuzde;
+    const kat = r.risk < 0.15 ? "Düşük risk" : (r.risk < M.esik ? "Orta risk" : "Yüksek risk");
+    $("kategori").textContent = kat; $("kategori").style.color = renk(r.risk);
+    $("aciklama").textContent = r.risk >= M.esik
+      ? "Model eşiği (%" + Math.round(M.esik * 100) + ") aşıldı: tarama amaçlı ileri değerlendirme önerilebilir."
+      : "Model eşiğinin (%" + Math.round(M.esik * 100) + ") altında.";
+    const eksikler = ALANLAR.filter(function (a) { return r.kullanilan[a.ad].eksik; }).map(function (a) { return a.et; });
+    if (eksikler.length) $("aciklama").textContent += " Medyan kullanılan alanlar: " + eksikler.join(", ") + ".";
+    // Katkı çubukları
+    const k = Object.entries(r.katkilar).sort(function (a, b) { return Math.abs(b[1]) - Math.abs(a[1]); });
+    const mx = Math.max(1.5, Math.max.apply(null, k.map(function (e) { return Math.abs(e[1]); })));
+    $("katki").innerHTML = k.map(function (e) {
+      const w = Math.abs(e[1]) / mx * 50, sol = e[1] >= 0 ? 50 : 50 - w;
+      return "<div>" + ADLAR[e[0]] + " <span class='kucuk'>" + (+r.kullanilan[e[0]].deger.toFixed(2)) + "</span></div><div class='cubuk'><span style='left:" + sol + "%;width:" + w + "%;background:" + (e[1] >= 0 ? "#c62f3a" : "#1f8a5b") + "'></span></div>";
+    }).join("");
+    $("kGlukoz").value = r.kullanilan.Glukoz.deger; $("kVKI").value = r.kullanilan.VKI.deger; $("kYas").value = r.kullanilan.Yas.deger;
+    neOlur();
+    $("sonuc").classList.remove("gizli"); $("neolur").classList.remove("gizli");
+    $("sonuc").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function neOlur() {
+    if (!taban) return;
+    const v = Object.assign({}, taban.v, { Glukoz: +$("kGlukoz").value, VKI: +$("kVKI").value, Yas: +$("kYas").value });
+    $("kGlukozY").textContent = v.Glukoz + " mg/dL"; $("kVKIY").textContent = v.VKI.toFixed(1); $("kYasY").textContent = v.Yas;
+    const r = DiyabetRisk.hesapla(v), fark = Math.round(r.risk * 100) - Math.round(taban.r.risk * 100);
+    $("yeniRisk").textContent = "%" + Math.round(r.risk * 100); $("yeniRisk").style.color = renk(r.risk);
+    $("fark").textContent = fark === 0 ? "(değişiklik yok)" : "(" + (fark > 0 ? "+" : "") + fark + " puan)";
+  }
+  ["kGlukoz", "kVKI", "kYas"].forEach(function (id) { $(id).addEventListener("input", neOlur); });
+  $("hesapla").addEventListener("click", hesapla);
+  $("modelBilgi").textContent = "Veri: " + M.veri + ". Eğitim: " + M.egitim_n + " kişi. Test setinde AUC: " + M.test_auc.toFixed(2).replace(".", ",") + ". Karar eşiği (%" + Math.round(M.esik * 100) + "), tarama amacıyla duyarlılık ≥ %80 olacak şekilde seçildi.";
+})();
+</script>
+</body>
+</html>
